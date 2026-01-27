@@ -70,7 +70,16 @@
             useEffect(() => {
                 calculate();
             }, [doseOrdered, vialSize, ageGroup]);
+            
+            // Determine suggested vial based on dose input
+            const getRecommendedVial = () => {
+                const dose = parseFloat(doseOrdered);
+                if (!dose || isNaN(dose)) return null;
+                return dose <= 500 ? '500' : '1000';
+            };
+            const recommendedVial = getRecommendedVial();
 
+            
             const calculate = () => {
                 const dose = parseFloat(doseOrdered);
                 if (!dose || isNaN(dose)) {
