@@ -1,7 +1,3 @@
-Here is a clean, professional README designed for your repository. It includes a section on the clinical logic so your colleagues trust the math, and a necessary medical disclaimer.
-
-You can create a file named README.md in your repository and paste this directly in.
-
 Rocephin (Ceftriaxone) IM Calculator
 A web-based tool designed to assist pediatric providers with calculating intramuscular (IM) Ceftriaxone doses, reconstitution volumes, and injection site safety limits.
 
