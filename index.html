@@ -5,17 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rocephin Calculator</title>
     
-    <!-- React and ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel for translating JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -29,7 +25,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- ICONS (Inline SVGs to avoid complex dependencies) ---
+        // --- ICONS ---
         const CalculatorIcon = ({size=24, className=""}) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
         );
@@ -70,7 +66,7 @@
             useEffect(() => {
                 calculate();
             }, [doseOrdered, vialSize, ageGroup]);
-            
+
             // Determine suggested vial based on dose input
             const getRecommendedVial = () => {
                 const dose = parseFloat(doseOrdered);
@@ -79,7 +75,6 @@
             };
             const recommendedVial = getRecommendedVial();
 
-            
             const calculate = () => {
                 const dose = parseFloat(doseOrdered);
                 if (!dose || isNaN(dose)) {
@@ -146,26 +141,44 @@
                             {/* Vial Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
-                                    Rocephin Vial Size Used
+                                   Rocephin Vial Size Used
                                 </label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {Object.keys(VIAL_DATA).map((size) => (
-                                        <button
-                                            key={size}
-                                            onClick={() => setVialSize(size)}
-                                            className={`p-3 rounded-lg border text-sm font-medium transition-all ${
-                                                vialSize === size
-                                                ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
-                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            {size} mg
-                                            <div className="text-xs font-normal opacity-75 mt-1">
-                                                Yields {VIAL_DATA[size].totalVolume} mL
-                                            </div>
-                                        </button>
-                                    ))}
+                                    {Object.keys(VIAL_DATA).map((size) => {
+                                        const isRecommended = recommendedVial === size;
+                                        return (
+                                            <button
+                                                key={size}
+                                                onClick={() => setVialSize(size)}
+                                                className={`p-3 rounded-lg border text-sm font-medium transition-all relative ${
+                                                    vialSize === size
+                                                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
+                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                {isRecommended && (
+                                                    <span className="absolute -top-2.5 right-2 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm">
+                                                        Rec. for Dose
+                                                    </span>
+                                                )}
+                                                {size} mg
+                                                <div className="text-xs font-normal opacity-75 mt-1">
+                                                    Yields {VIAL_DATA[size].totalVolume} mL
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
+                                
+                                {/* 10kg Guideline Tip */}
+                                {(ageGroup === 'infant' || ageGroup === 'toddler') && (
+                                    <div className="mt-2 flex items-start gap-2 p-2 bg-amber-50 rounded-lg text-amber-800 text-xs border border-amber-100">
+                                        <InfoIcon size={14} className="mt-0.5 shrink-0" />
+                                        <span>
+                                            <strong>Guideline:</strong> Consider 500mg vial for patients &lt;10kg, and 1000mg vial for &gt;10kg.
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Age Group Selection */}
