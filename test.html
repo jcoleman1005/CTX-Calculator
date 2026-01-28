@@ -45,16 +45,16 @@
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         );
 
-        // --- MAIN APP COMPONENT ---
         const RocephinCalculator = () => {
             const [doseOrdered, setDoseOrdered] = useState('');
             const [vialSize, setVialSize] = useState('1000'); 
+            const [lidoConc, setLidoConc] = useState('1'); // '1' or '2'
             const [ageGroup, setAgeGroup] = useState('child_older');
             const [result, setResult] = useState(null);
 
             const VIAL_DATA = {
-                '500': { mg: 500, diluent: 1.0, totalVolume: 1.4, description: '500 mg Vial (add 1.0 mL diluent)' },
-                '1000': { mg: 1000, diluent: 2.1, totalVolume: 2.9, description: '1000 mg Vial (add 2.1 mL diluent)' }
+                '500': { mg: 500, diluent: 1.0, totalVolume: 1.4 },
+                '1000': { mg: 1000, diluent: 2.1, totalVolume: 2.9 }
             };
 
             const AGE_GUIDELINES = {
@@ -65,9 +65,8 @@
 
             useEffect(() => {
                 calculate();
-            }, [doseOrdered, vialSize, ageGroup]);
+            }, [doseOrdered, vialSize, lidoConc, ageGroup]);
 
-            // Determine suggested vial based on dose input
             const getRecommendedVial = () => {
                 const dose = parseFloat(doseOrdered);
                 if (!dose || isNaN(dose)) return null;
@@ -83,7 +82,6 @@
                 }
 
                 const vial = VIAL_DATA[vialSize];
-                // Formula: (Dose / Vial mg) * Total Yield Volume
                 const calculatedVolume = (dose / vial.mg) * vial.totalVolume;
                 const roundedVolume = Math.round(calculatedVolume * 10) / 10;
                 
@@ -95,14 +93,15 @@
                     exactVolume: calculatedVolume.toFixed(2),
                     numInjections,
                     maxPerSite: guideline.maxPerSite,
-                    vialUsed: vial
+                    vialUsed: vial,
+                    lidoVolume: lidoConc === '1' ? vial.diluent : (vial.diluent / 2).toFixed(2),
+                    salineVolume: lidoConc === '1' ? 0 : (vial.diluent / 2).toFixed(2)
                 });
             };
 
             return (
                 <div className="max-w-md mx-auto min-h-screen p-4 sm:p-6 pb-20">
                     
-                    {/* Header */}
                     <div className="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-6 flex items-center gap-3">
                         <div className="bg-white/20 p-2 rounded-lg">
                             <CalculatorIcon size={24} />
@@ -113,19 +112,12 @@
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        
-                        {/* Input Section */}
+                    <div className="space-y-4">
                         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                            <h2 className="font-semibold text-slate-700 flex items-center gap-2">
-                                <InfoIcon size={18} /> Medication Details
-                            </h2>
-
+                            
                             {/* Dose Input */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-1">
-                                    Dose Ordered (mg)
-                                </label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Dose Ordered (mg)</label>
                                 <div className="relative">
                                     <input
                                         type="number"
@@ -140,61 +132,53 @@
 
                             {/* Vial Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">
-                                    Vial Size Used
-                                </label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Vial Size Available</label>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {Object.keys(VIAL_DATA).map((size) => {
-                                        const isRecommended = recommendedVial === size;
-                                        return (
-                                            <button
-                                                key={size}
-                                                onClick={() => setVialSize(size)}
-                                                className={`p-3 rounded-lg border text-sm font-medium transition-all relative ${
-                                                    vialSize === size
-                                                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
-                                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                                                }`}
-                                            >
-                                                {isRecommended && (
-                                                    <span className="absolute -top-2.5 right-2 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm">
-                                                        Rec. for Dose
-                                                    </span>
-                                                )}
-                                                {size} mg
-                                                <div className="text-xs font-normal opacity-75 mt-1">
-                                                    Yields {VIAL_DATA[size].totalVolume} mL
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                    {Object.keys(VIAL_DATA).map((size) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => setVialSize(size)}
+                                            className={`p-3 rounded-lg border text-sm font-medium transition-all relative ${
+                                                vialSize === size ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600'
+                                            }`}
+                                        >
+                                            {recommendedVial === size && (
+                                                <span className="absolute -top-2.5 right-2 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">Suggested</span>
+                                            )}
+                                            {size} mg
+                                        </button>
+                                    ))}
                                 </div>
-                                
-                                {/* 10kg Guideline Tip */}
-                                {(ageGroup === 'infant' || ageGroup === 'toddler') && (
-                                    <div className="mt-2 flex items-start gap-2 p-2 bg-amber-50 rounded-lg text-amber-800 text-xs border border-amber-100">
-                                        <InfoIcon size={14} className="mt-0.5 shrink-0" />
-                                        <span>
-                                            <strong>Guideline:</strong> Consider 500mg vial for patients &lt;10kg, and 1000mg vial for &gt;10kg.
-                                        </span>
-                                    </div>
-                                )}
                             </div>
 
-                            {/* Age Group Selection */}
+                            {/* Lidocaine Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-2">
-                                    Patient Age (for injection limits)
-                                </label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Lidocaine Concentration Available</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {['1', '2'].map((conc) => (
+                                        <button
+                                            key={conc}
+                                            onClick={() => setLidoConc(conc)}
+                                            className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                                                lidoConc === conc ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600'
+                                            }`}
+                                        >
+                                            {conc}% Lidocaine
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Age Group */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Patient Age Group</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {Object.entries(AGE_GUIDELINES).map(([key, data]) => (
                                         <button
                                             key={key}
                                             onClick={() => setAgeGroup(key)}
-                                            className={`p-2 rounded-lg border text-xs font-medium transition-all flex flex-col items-center justify-center text-center h-20 ${
-                                                ageGroup === key
-                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm'
-                                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                            className={`p-2 rounded-lg border text-xs font-medium transition-all flex flex-col items-center justify-center h-20 ${
+                                                ageGroup === key ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-slate-200 text-slate-600'
                                             }`}
                                         >
                                             {key === 'infant' ? <BabyIcon size={18} className="mb-1"/> : <UserIcon size={18} className="mb-1"/>}
@@ -205,82 +189,54 @@
                             </div>
                         </div>
 
-                        {/* Results Section */}
+                        {/* Result Display */}
                         {result ? (
                             <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden">
-                                <div className="p-6 bg-blue-50/50">
-                                    <div className="text-center">
-                                        <p className="text-slate-500 font-medium mb-1 uppercase tracking-wide text-xs">Total Volume to Draw</p>
-                                        <div className="text-5xl font-bold text-blue-600 flex items-center justify-center gap-2">
-                                            {result.volume}
-                                            <span className="text-2xl text-slate-400 font-medium">mL</span>
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-2">
-                                            (Calculated: {result.exactVolume} mL rounded)
-                                        </p>
-                                    </div>
+                                <div className="p-6 bg-blue-50/50 text-center">
+                                    <p className="text-slate-500 font-medium mb-1 uppercase tracking-wide text-xs">Final Volume to Draw</p>
+                                    <div className="text-5xl font-bold text-blue-600">{result.volume}<span className="text-2xl text-slate-400 ml-1">mL</span></div>
                                 </div>
 
-                                <div className="p-5 border-t border-slate-100 space-y-4">
-                                    {/* Injection Instructions */}
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full mt-1">
-                                            <SyringeIcon size={20} />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-slate-800">Administration Guide</h3>
-                                            <div className="text-sm text-slate-600 mt-1 space-y-2">
-                                                <p>
-                                                    <span className="font-medium text-slate-900">Total Dose:</span> {doseOrdered} mg
-                                                </p>
-                                                
-                                                {result.numInjections > 1 ? (
-                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
-                                                        <div className="flex items-center gap-2 text-amber-700 font-bold mb-1">
-                                                            <AlertCircleIcon size={16} />
-                                                            Split Dose Required
-                                                        </div>
-                                                        <p>
-                                                            Volume exceeds limit for this age ({AGE_GUIDELINES[ageGroup].maxPerSite} mL/site). 
-                                                            Please split into <span className="font-bold">{result.numInjections} separate injections</span>.
-                                                        </p>
-                                                        <p className="mt-2 text-amber-800 font-medium">
-                                                            ~{(result.volume / result.numInjections).toFixed(1)} mL per site
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-emerald-700 font-medium flex items-center gap-2 mt-2">
-                                                        ✓ Safe for single injection site
-                                                    </p>
-                                                )}
-                                            </div>
+                                <div className="p-5 space-y-4">
+                                    {/* Reconstitution Logic */}
+                                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                        <h4 className="font-bold text-amber-900 text-sm mb-2 flex items-center gap-2">
+                                            <SyringeIcon size={16}/> Reconstitution Steps ({vialSize}mg vial)
+                                        </h4>
+                                        <div className="text-sm text-amber-800 space-y-2">
+                                            {lidoConc === '1' ? (
+                                                <p>Add <strong>{result.lidoVolume} mL</strong> of 1% Lidocaine directly to vial.</p>
+                                            ) : (
+                                                <div className="space-y-1">
+                                                    <p className="font-semibold underline">Mix 1:1 to create 1% equivalent:</p>
+                                                    <p>1. Draw <strong>{result.lidoVolume} mL</strong> of 2% Lidocaine.</p>
+                                                    <p>2. Draw <strong>{result.salineVolume} mL</strong> of Sterile Saline.</p>
+                                                    <p>3. Add this total mixture ({result.vialUsed.diluent} mL) to vial.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Reconstitution Instructions */}
-                                    <div className="bg-slate-50 p-4 rounded-lg text-sm text-slate-600 border border-slate-100">
-                                        <h4 className="font-semibold text-slate-700 mb-2">Reconstitution ({result.vialUsed.mg}mg Vial)</h4>
-                                        <ul className="list-disc list-inside space-y-1">
-                                            <li>Dilute with <strong>{result.vialUsed.diluent} mL</strong> of 1% Lidocaine.</li>
-                                            <li>Total fluid volume will be <strong>{result.vialUsed.totalVolume} mL</strong>.</li>
-                                            <li>Ensure all clumps are dissolved before drawing.</li>
-                                        </ul>
+                                    {/* Injection Site Safety */}
+                                    <div className="text-sm">
+                                        {result.numInjections > 1 ? (
+                                            <div className="flex items-start gap-2 text-red-600 font-medium">
+                                                <AlertCircleIcon size={18} className="shrink-0"/>
+                                                <span>Split dose required: <strong>{result.numInjections} sites</strong> (~{(result.volume/result.numInjections).toFixed(1)} mL each).</span>
+                                            </div>
+                                        ) : (
+                                            <div className="text-emerald-700 font-medium flex items-center gap-2">
+                                                ✓ Safe for single injection site.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center p-8 text-slate-400 bg-white rounded-xl border border-slate-200 border-dashed">
-                                <SyringeIcon size={48} className="mx-auto mb-3 opacity-20" />
-                                <p>Enter a dose to see calculation</p>
+                            <div className="text-center p-8 text-slate-400 bg-white rounded-xl border border-dashed border-slate-300">
+                                <p>Enter dose to see instructions</p>
                             </div>
                         )}
-                    </div>
-
-                    <div className="mt-8 text-center px-4">
-                        <p className="text-[10px] text-slate-400 leading-tight">
-                        <strong>Disclaimer:</strong> This tool is for educational and double-checking purposes only. 
-                        Always verify calculations and follow your institution's specific protocols.
-                        </p>
                     </div>
                 </div>
             );
