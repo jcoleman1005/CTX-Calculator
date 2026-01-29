@@ -16,6 +16,14 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
+        /* Custom toggle switch styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -47,13 +55,21 @@
         const FlaskIcon = ({size=24, className=""}) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 2v7.31"/><path d="M14 2v7.31"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg>
         );
+        const BeakerEditIcon = ({size=24, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4.5 3h15"/><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"/><path d="M6 14h12"/><path d="M13.5 11.5 18 16"/><path d="m18 11.5-4.5 4.5"/></svg>
+        );
 
         // --- MAIN APP COMPONENT ---
         const RocephinCalculator = () => {
             const [doseOrdered, setDoseOrdered] = useState('');
             const [vialSize, setVialSize] = useState('1000'); 
-            const [lidoConc, setLidoConc] = useState('1'); // New State: '1' or '2'
+            const [lidoConc, setLidoConc] = useState('1'); 
             const [ageGroup, setAgeGroup] = useState('child_older');
+            
+            // New State for Custom Yield
+            const [showCustomYield, setShowCustomYield] = useState(false);
+            const [customYield, setCustomYield] = useState('');
+
             const [result, setResult] = useState(null);
 
             const VIAL_DATA = {
@@ -67,11 +83,16 @@
                 'child_older': { label: 'Child (> 2 yrs)', maxPerSite: 2.0 }
             };
 
+            // Reset custom yield when vial size changes to avoid confusion
+            useEffect(() => {
+                setCustomYield('');
+                setShowCustomYield(false);
+            }, [vialSize]);
+
             useEffect(() => {
                 calculate();
-            }, [doseOrdered, vialSize, lidoConc, ageGroup]);
+            }, [doseOrdered, vialSize, lidoConc, ageGroup, showCustomYield, customYield]);
 
-            // Determine suggested vial based on dose input
             const getRecommendedVial = () => {
                 const dose = parseFloat(doseOrdered);
                 if (!dose || isNaN(dose)) return null;
@@ -87,8 +108,17 @@
                 }
 
                 const vial = VIAL_DATA[vialSize];
-                // Formula: (Dose / Vial mg) * Total Yield Volume
-                const calculatedVolume = (dose / vial.mg) * vial.totalVolume;
+                
+                // --- CUSTOM VOLUME LOGIC ---
+                // If toggle is ON and user typed a valid number, use it. Otherwise use standard.
+                let yieldVolume = vial.totalVolume;
+                if (showCustomYield && customYield && !isNaN(parseFloat(customYield))) {
+                    yieldVolume = parseFloat(customYield);
+                }
+
+                // Formula: (Dose / Vial mg) * Yield Volume
+                const calculatedVolume = (dose / vial.mg) * yieldVolume;
+                
                 const roundedVolume = Math.round(calculatedVolume * 10) / 10;
                 
                 const guideline = AGE_GUIDELINES[ageGroup];
@@ -99,7 +129,10 @@
                     exactVolume: calculatedVolume.toFixed(2),
                     numInjections,
                     maxPerSite: guideline.maxPerSite,
-                    vialUsed: vial
+                    vialUsed: vial,
+                    // Pass back the yield used so we can display it
+                    usedYield: yieldVolume, 
+                    isCustom: (yieldVolume !== vial.totalVolume)
                 });
             };
 
@@ -147,7 +180,7 @@
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
                                    Rocephin Vial Size Used
                                 </label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3 mb-3">
                                     {Object.keys(VIAL_DATA).map((size) => {
                                         const isRecommended = recommendedVial === size;
                                         return (
@@ -167,25 +200,51 @@
                                                 )}
                                                 {size} mg
                                                 <div className="text-xs font-normal opacity-75 mt-1">
-                                                    Yields {VIAL_DATA[size].totalVolume} mL
+                                                    Std Yield: {VIAL_DATA[size].totalVolume} mL
                                                 </div>
                                             </button>
                                         );
                                     })}
                                 </div>
-                                
-                                {/* 10kg Guideline Tip */}
-                                {(ageGroup === 'infant' || ageGroup === 'toddler') && (
-                                    <div className="mt-2 flex items-start gap-2 p-2 bg-amber-50 rounded-lg text-amber-800 text-xs border border-amber-100">
-                                        <InfoIcon size={14} className="mt-0.5 shrink-0" />
-                                        <span>
-                                            <strong>Guideline:</strong> Consider 500mg vial for patients &lt;10kg, and 1000mg vial for &gt;10kg.
-                                        </span>
+
+                                {/* Custom Yield Toggle */}
+                                <div className="flex flex-col gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 cursor-pointer" onClick={() => setShowCustomYield(!showCustomYield)}>
+                                            <BeakerEditIcon size={14} />
+                                            Reconstituted Volume differs?
+                                        </label>
+                                        
+                                        {/* Simple Checkbox Toggle */}
+                                        <input 
+                                            type="checkbox" 
+                                            checked={showCustomYield} 
+                                            onChange={(e) => setShowCustomYield(e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                        />
                                     </div>
-                                )}
+
+                                    {showCustomYield && (
+                                        <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <label className="block text-[10px] text-slate-500 uppercase tracking-wide font-bold mb-1">
+                                                Actual Total Volume in Vial (mL)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={customYield}
+                                                onChange={(e) => setCustomYield(e.target.value)}
+                                                placeholder={`e.g. ${VIAL_DATA[vialSize].totalVolume}`}
+                                                className="w-full p-2 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                                            />
+                                            <p className="text-[10px] text-amber-600 mt-1 leading-tight">
+                                                * This will override the standard {VIAL_DATA[vialSize].totalVolume} mL math assumption.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* NEW: Lidocaine Selection */}
+                            {/* Lidocaine Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-2">
                                     Lidocaine Concentration Available
@@ -251,6 +310,11 @@
                                         <p className="text-xs text-slate-400 mt-2">
                                             (Calculated: {result.exactVolume} mL rounded)
                                         </p>
+                                        {result.isCustom && (
+                                            <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">
+                                                Based on Actual Yield: {result.usedYield} mL
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -290,21 +354,25 @@
                                         </div>
                                     </div>
 
-                                    {/* UPDATED: Reconstitution Instructions */}
+                                    {/* Reconstitution Instructions */}
                                     <div className={`p-4 rounded-lg text-sm border ${lidoConc === '2' ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
                                         <h4 className="font-semibold mb-2 flex items-center gap-2">
                                             <FlaskIcon size={16}/> Reconstitution ({result.vialUsed.mg}mg Vial)
                                         </h4>
                                         
                                         {lidoConc === '1' ? (
-                                            /* Standard Instructions (1% available) */
+                                            /* Standard Instructions */
                                             <ul className="list-disc list-inside space-y-1">
                                                 <li>Dilute with <strong>{result.vialUsed.diluent} mL</strong> of 1% Lidocaine.</li>
-                                                <li>Total fluid volume will be <strong>{result.vialUsed.totalVolume} mL</strong>.</li>
+                                                {result.isCustom ? (
+                                                    <li className="font-medium text-amber-700">Note: You observed a total yield of {result.usedYield} mL.</li>
+                                                ) : (
+                                                    <li>Standard total fluid volume is <strong>{result.vialUsed.totalVolume} mL</strong>.</li>
+                                                )}
                                                 <li>Ensure all clumps are dissolved before drawing.</li>
                                             </ul>
                                         ) : (
-                                            /* Dilution Instructions (2% available) */
+                                            /* Dilution Instructions */
                                             <div className="space-y-2">
                                                 <p className="font-medium text-amber-800 border-b border-amber-200 pb-1">
                                                     Required: Dilute 2% Lidocaine to 1%
