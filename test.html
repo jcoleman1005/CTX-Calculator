@@ -47,6 +47,9 @@
         const FlaskIcon = ({size=24, className=""}) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 2v7.31"/><path d="M14 2v7.31"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/></svg>
         );
+        const CheckIcon = ({size=24, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 6 9 17l-5-5"/></svg>
+        );
 
         // --- MAIN APP COMPONENT ---
         const RocephinCalculator = () => {
@@ -54,6 +57,7 @@
             const [vialSize, setVialSize] = useState('1000'); 
             const [ageGroup, setAgeGroup] = useState('child_older');
             const [reconstitutedVol, setReconstitutedVol] = useState('2.9');
+            const [isConfirmed, setIsConfirmed] = useState(false);
             const [result, setResult] = useState(null);
 
             const MAX_DOSE = 1000;
@@ -71,12 +75,23 @@
 
             // Sync volume input with standard yield when vial size changes
             useEffect(() => {
-                setReconstitutedVol(VIAL_DATA[vialSize].totalVolume.toString());
+                const standard = VIAL_DATA[vialSize].totalVolume.toString();
+                setReconstitutedVol(standard);
+                setIsConfirmed(false);
             }, [vialSize]);
 
+            // Reset confirmation when dose or age changes
             useEffect(() => {
-                calculate();
-            }, [doseOrdered, vialSize, ageGroup, reconstitutedVol]);
+                setIsConfirmed(false);
+            }, [doseOrdered, ageGroup]);
+
+            useEffect(() => {
+                if (isConfirmed) {
+                    calculate();
+                } else {
+                    setResult(null);
+                }
+            }, [doseOrdered, vialSize, ageGroup, reconstitutedVol, isConfirmed]);
 
             const handleDoseChange = (e) => {
                 let val = e.target.value;
@@ -84,6 +99,7 @@
                     val = MAX_DOSE.toString();
                 }
                 setDoseOrdered(val);
+                setIsConfirmed(false);
             };
 
             const calculate = () => {
@@ -96,8 +112,6 @@
                 }
 
                 const vial = VIAL_DATA[vialSize];
-                
-                // Formula: (Dose / Vial mg) * Final Observed Volume
                 const calculatedVolume = (dose / vial.mg) * actualYield;
                 const roundedVolume = Math.round(calculatedVolume * 10) / 10;
                 
@@ -175,23 +189,49 @@
                                 </div>
                             </div>
 
-                            {/* Required Yield Input */}
-                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                <label className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
-                                    <FlaskIcon size={16} /> Total Reconstituted Volume (mL)
-                                </label>
-                                <p className="text-[11px] text-slate-500 mb-3 leading-tight">
-                                    Verify the total fluid volume in the vial after adding diluent.
-                                </p>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        value={reconstitutedVol}
-                                        onChange={(e) => setReconstitutedVol(e.target.value)}
-                                        className="w-full pl-3 pr-12 py-3 bg-white border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold text-blue-800"
-                                    />
-                                    <span className="absolute right-4 top-3 text-slate-400 font-medium">mL</span>
+                            {/* Preparation Reference and Yield Confirmation */}
+                            <div className="space-y-3 pt-2">
+                                {/* Instruction Reference */}
+                                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600">
+                                    <h4 className="font-bold text-slate-700 mb-1">Reconstitution Instructions</h4>
+                                    <ul className="list-disc list-inside space-y-1">
+                                        <li>Add <strong>{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine.</li>
+                                        <li className="text-slate-400 italic">Expected standard yield: {VIAL_DATA[vialSize].totalVolume} mL.</li>
+                                    </ul>
+                                </div>
+
+                                {/* Actual Yield Input */}
+                                <div className="p-4 bg-white border-2 border-slate-200 rounded-xl">
+                                    <label className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
+                                        <FlaskIcon size={16} /> Total Reconstituted Volume (mL)
+                                    </label>
+                                    <p className="text-[11px] text-slate-500 mb-3 leading-tight">
+                                        Enter the actual total fluid volume observed in the vial.
+                                    </p>
+                                    
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <input
+                                                type="number"
+                                                step="0.1"
+                                                value={reconstitutedVol}
+                                                onChange={(e) => {
+                                                    setReconstitutedVol(e.target.value);
+                                                    setIsConfirmed(false);
+                                                }}
+                                                className={`w-full pl-3 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold transition-all ${isConfirmed ? 'bg-emerald-50 border-emerald-500 text-emerald-800' : 'bg-white border-blue-300 text-blue-800'}`}
+                                            />
+                                            <span className="absolute right-3 top-3.5 text-slate-400 text-sm">mL</span>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={() => setIsConfirmed(true)}
+                                            disabled={!reconstitutedVol || isConfirmed}
+                                            className={`px-4 rounded-lg font-bold flex items-center gap-2 transition-all ${isConfirmed ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md active:scale-95'}`}
+                                        >
+                                            {isConfirmed ? <CheckIcon size={20} /> : 'Confirm'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -218,8 +258,8 @@
                         </div>
 
                         {/* Results Section */}
-                        {result ? (
-                            <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden">
+                        {isConfirmed && result ? (
+                            <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden animate-in fade-in zoom-in duration-300">
                                 <div className="p-6 bg-blue-50/50">
                                     <div className="text-center">
                                         <p className="text-slate-500 font-medium mb-1 uppercase tracking-wide text-xs">Final Volume to Draw</p>
@@ -227,9 +267,9 @@
                                             {result.volume}
                                             <span className="text-2xl text-slate-400 font-medium">mL</span>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-2">
-                                            (Based on {result.currentYield} mL total yield)
-                                        </p>
+                                        <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full uppercase">
+                                            Verified Yield: {result.currentYield} mL
+                                        </div>
                                     </div>
                                 </div>
 
@@ -258,20 +298,11 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Quick Reconstitution Check */}
-                                    <div className="p-4 rounded-lg text-sm bg-slate-50 border border-slate-100 text-slate-600">
-                                        <h4 className="font-semibold mb-2">Preparation Reference</h4>
-                                        <ul className="list-disc list-inside space-y-1">
-                                            <li>Add <strong>{result.vialUsed.diluent} mL</strong> of 1% Lidocaine.</li>
-                                            <li>Standard expected yield: {result.vialUsed.totalVolume} mL.</li>
-                                        </ul>
-                                    </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="text-center p-8 text-slate-400 bg-white rounded-xl border border-slate-200 border-dashed">
-                                <p>Enter dose and verify volume to see calculation</p>
+                                <p>Verify the Reconstituted Volume above to display final draw-up amount.</p>
                             </div>
                         )}
                     </div>
