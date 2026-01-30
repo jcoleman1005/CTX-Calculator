@@ -73,18 +73,19 @@
                 'child_older': { label: 'Child (> 2 yrs)', maxPerSite: 2.0 }
             };
 
-            // Sync volume input with standard yield when vial size changes
+            // Reset confirmation and sync volume when vial size changes
             useEffect(() => {
                 const standard = VIAL_DATA[vialSize].totalVolume.toString();
                 setReconstitutedVol(standard);
                 setIsConfirmed(false);
             }, [vialSize]);
 
-            // Reset confirmation when dose or age changes
+            // Reset confirmation only if dose changes
             useEffect(() => {
                 setIsConfirmed(false);
-            }, [doseOrdered, ageGroup]);
+            }, [doseOrdered]);
 
+            // Recalculate whenever inputs change, provided confirmation is true
             useEffect(() => {
                 if (isConfirmed) {
                     calculate();
@@ -99,7 +100,6 @@
                     val = MAX_DOSE.toString();
                 }
                 setDoseOrdered(val);
-                setIsConfirmed(false);
             };
 
             const calculate = () => {
@@ -191,7 +191,6 @@
 
                             {/* Preparation Reference and Yield Confirmation */}
                             <div className="space-y-3 pt-2">
-                                {/* Instruction Reference */}
                                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600">
                                     <h4 className="font-bold text-slate-700 mb-1">Reconstitution Instructions</h4>
                                     <ul className="list-disc list-inside space-y-1">
@@ -200,7 +199,6 @@
                                     </ul>
                                 </div>
 
-                                {/* Actual Yield Input */}
                                 <div className="p-4 bg-white border-2 border-slate-200 rounded-xl">
                                     <label className="block text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
                                         <FlaskIcon size={16} /> Total Reconstituted Volume (mL)
@@ -274,7 +272,6 @@
                                 </div>
 
                                 <div className="p-5 border-t border-slate-100 space-y-4">
-                                    {/* Administration Guide */}
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full mt-1">
                                             <SyringeIcon size={20} />
