@@ -102,6 +102,7 @@ export default function App() {
     return (
         <div className="bg-slate-50 text-slate-800 min-h-screen">
             <div className="max-w-md mx-auto p-4 sm:p-6 pb-20">
+                
                 <div className="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-6 flex items-center gap-3">
                     <div className="bg-white/20 p-2 rounded-lg">
                         <CalculatorIcon size={24} />
@@ -109,6 +110,21 @@ export default function App() {
                     <div>
                         <h1 className="text-xl font-bold">Rocephin Calculator</h1>
                         <p className="text-blue-100 text-xs">IM Draw-Up Assistant</p>
+                    </div>
+                </div>
+
+                <div className="bg-sky-50 border-l-4 border-sky-500 p-4 rounded-r-xl shadow-sm mb-6">
+                    <div className="flex gap-3">
+                        <InfoIcon size={20} className="text-sky-600 shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="font-bold text-sky-900 text-sm">System Update</h3>
+                            <p className="text-sky-800 text-sm mt-1">
+                                Please <strong>refresh your browser</strong> to ensure you have the latest clinical safeguards loaded.
+                            </p>
+                            <p className="text-sky-800 text-sm mt-2">
+                                Bookmark our permanent address: <a href="https://ctxcalc.jcoleman.us" className="font-bold underline hover:text-sky-900">ctxcalc.jcoleman.us</a>
+                            </p>
+                        </div>
                     </div>
                 </div>
 
