@@ -119,10 +119,10 @@ export default function App() {
                         <div>
                             <h3 className="font-bold text-sky-900 text-sm">System Update</h3>
                             <p className="text-sky-800 text-sm mt-1">
-                                Please <strong>refresh your browser</strong> to ensure you have the latest clinical safeguards loaded.
+                                Please <strong>refresh your browser</strong> to ensure you have the latest updates.
                             </p>
                             <p className="text-sky-800 text-sm mt-2">
-                                Bookmark our permanent address: <a href="https://ctxcalc.jcoleman.us" className="font-bold underline hover:text-sky-900">ctxcalc.jcoleman.us</a>
+                                Bookmark the permanent address: <a href="https://ctxcalc.jcoleman.us" className="font-bold underline hover:text-sky-900">ctxcalc.jcoleman.us</a>
                             </p>
                         </div>
                     </div>
