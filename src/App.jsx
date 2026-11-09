@@ -149,17 +149,20 @@ export default function App() {
         setIsConfirmed(false);
     };
 
-    const handleDoseChange = (e) => {
-        setDoseOrdered(e.target.value);
-        invalidate();
-    };
-
     const handleVialChange = (size) => {
         if (size === vialSize) return;
         setVialSize(size);
         // Never pre-fill: the nurse must enter the volume actually observed in the vial.
         setReconstitutedVol('');
         invalidate();
+    };
+
+    const handleDoseChange = (e) => {
+        const value = e.target.value;
+        setDoseOrdered(value);
+        invalidate();
+        // A dose larger than the 500 mg vial can only come from the 1000 mg vial: switch automatically.
+        if (parseFloat(value) > VIAL_DATA['500'].mg) handleVialChange('1000');
     };
 
     const handleVolChange = (e) => {
@@ -267,12 +270,16 @@ export default function App() {
                                         key={size}
                                         onClick={() => handleVialChange(size)}
                                         aria-pressed={vialSize === size}
-                                        className={`p-3 rounded-lg border text-base font-medium transition-all cursor-pointer ${FOCUS} ${choiceBtn(vialSize === size, 'blue')}`}
+                                        disabled={doseNum > VIAL_DATA[size].mg}
+                                        className={`p-3 rounded-lg border text-base font-medium transition-all cursor-pointer ${FOCUS} ${choiceBtn(vialSize === size, 'blue')} disabled:cursor-not-allowed disabled:bg-slate-200 disabled:hover:bg-slate-200 disabled:border-slate-200 disabled:text-slate-500 disabled:line-through`}
                                     >
                                         {size} mg
                                     </button>
                                 ))}
                             </div>
+                            {doseNum > VIAL_DATA['500'].mg && (
+                                <p className="mt-2 text-sm text-slate-600">Doses over {VIAL_DATA['500'].mg} mg require the 1000 mg vial.</p>
+                            )}
                         </div>
 
                         <div role="group" aria-labelledby="age-label">
