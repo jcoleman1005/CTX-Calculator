@@ -264,18 +264,33 @@ export default function App() {
                         <div role="group" aria-labelledby="vial-label">
                             <div id="vial-label" className="block text-sm font-medium text-slate-700 mb-2">Vial Size Used</div>
                             <div className="grid grid-cols-2 gap-3">
-                                {Object.keys(VIAL_DATA).map((size) => (
-                                    <button
-                                        type="button"
-                                        key={size}
-                                        onClick={() => handleVialChange(size)}
-                                        aria-pressed={vialSize === size}
-                                        disabled={doseNum > VIAL_DATA[size].mg}
-                                        className={`p-3 rounded-lg border text-base font-medium transition-all cursor-pointer ${FOCUS} ${choiceBtn(vialSize === size, 'blue')} disabled:cursor-not-allowed disabled:bg-slate-200 disabled:hover:bg-slate-200 disabled:border-slate-200 disabled:text-slate-500 disabled:line-through`}
-                                    >
-                                        {size} mg
-                                    </button>
-                                ))}
+                                {Object.keys(VIAL_DATA).map((size) => {
+                                    const blocked = doseNum > VIAL_DATA[size].mg;
+                                    return (
+                                        <div key={size} className="relative group">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVialChange(size)}
+                                                aria-pressed={vialSize === size}
+                                                aria-describedby={blocked ? `vial-tip-${size}` : undefined}
+                                                disabled={blocked}
+                                                className={`w-full p-3 rounded-lg border text-base font-medium transition-all cursor-pointer ${FOCUS} ${choiceBtn(vialSize === size, 'blue')} disabled:cursor-not-allowed disabled:bg-slate-200 disabled:hover:bg-slate-200 disabled:border-slate-200 disabled:text-slate-500 disabled:line-through`}
+                                            >
+                                                {size} mg
+                                            </button>
+                                            {blocked && (
+                                                <div
+                                                    id={`vial-tip-${size}`}
+                                                    role="tooltip"
+                                                    className="pointer-events-none absolute left-0 bottom-full mb-2 z-10 w-max max-w-[15rem] rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100 motion-reduce:transition-none"
+                                                >
+                                                    The {size} mg vial can't be used: the dose is over {VIAL_DATA[size].mg} mg.
+                                                    <span aria-hidden="true" className="absolute left-6 top-full -mt-1 h-2 w-2 rotate-45 bg-slate-800" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                             {doseNum > VIAL_DATA['500'].mg && (
                                 <p className="mt-2 text-sm text-slate-600">Doses over {VIAL_DATA['500'].mg} mg require the 1000 mg vial.</p>
