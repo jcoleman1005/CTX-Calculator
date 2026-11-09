@@ -427,6 +427,18 @@ export default function App() {
                                             Verified Yield: {result.currentYield} mL
                                         </div>
                                     </div>
+
+                                    {result.numInjections > 1 ? (
+                                        <div role="alert" className="mt-4 bg-amber-100 border-2 border-amber-400 rounded-lg p-3 text-sm text-amber-950">
+                                            <div className="flex items-center gap-2 text-amber-800 font-bold text-base mb-1">
+                                                <AlertCircleIcon size={18} /> Split Dose Required
+                                            </div>
+                                            <p>Exceeds {result.maxPerSite} mL limit. Split into <span className="font-bold">{result.numInjections} injections</span>.</p>
+                                            <p className="mt-1 font-bold">~{(result.volume / result.numInjections).toFixed(1)} mL per site</p>
+                                        </div>
+                                    ) : (
+                                        <p className="mt-4 text-emerald-800 font-semibold text-sm flex items-center justify-center gap-2">✓ Safe for single injection site</p>
+                                    )}
                                 </div>
 
                                 <div className="p-5 border-t border-slate-100 space-y-4">
@@ -438,18 +450,6 @@ export default function App() {
                                             <h3 className="font-semibold text-slate-800">Administration Guide</h3>
                                             <div className="text-sm text-slate-600 mt-1 space-y-2">
                                                 <p><span className="font-medium text-slate-900">Total Dose:</span> {doseOrdered} mg</p>
-
-                                                {result.numInjections > 1 ? (
-                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
-                                                        <div className="flex items-center gap-2 text-amber-700 font-bold mb-1">
-                                                            <AlertCircleIcon size={16} /> Split Dose Required
-                                                        </div>
-                                                        <p>Exceeds {result.maxPerSite} mL limit. Split into <span className="font-bold">{result.numInjections} injections</span>.</p>
-                                                        <p className="mt-2 text-amber-800 font-medium">~{(result.volume / result.numInjections).toFixed(1)} mL per site</p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-emerald-700 font-medium flex items-center gap-2 mt-2">✓ Safe for single injection site</p>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
