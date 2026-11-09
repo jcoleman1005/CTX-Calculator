@@ -38,6 +38,9 @@ export default function App() {
     const [wasReset, setWasReset] = useState(false);
     const [showWork, setShowWork] = useState(false);
     const [showBanner, setShowBanner] = useState(true);
+    // Phases latch: once a panel has appeared it stays, so editing an earlier field never makes it vanish.
+    const [reached2, setReached2] = useState(false);
+    const [reached3, setReached3] = useState(false);
 
     const resultRef = useRef(null);
     const doseRef = useRef(null);
@@ -103,12 +106,31 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isConfirmed, canConfirm, vialSize, volNum, doseNum, ageGroup]);
 
+    // Phase 2 (instructions + observed volume) appears once dose and age group are valid; phase 3 on first Confirm.
+    const inputsReady = doseNum > 0 && !doseError && !!ageGroup;
+    if (inputsReady && !reached2) setReached2(true);
+    if (result && !reached3) setReached3(true);
+
+    const nextSteps = [];
+    if (!(doseNum > 0) || doseError) nextSteps.push('a valid dose');
+    if (!ageGroup) nextSteps.push('an age group');
+
+    // Panel wrapper classes. On wide screens panels grow in (width + fade) and the row re-centers smoothly;
+    // on phones a hidden panel is simply absent and a new one fades in.
+    const panelClass = (shown, first) => [
+        'min-w-0 lg:overflow-hidden lg:transition-all lg:duration-500 lg:ease-out motion-reduce:transition-none',
+        shown
+            ? `lg:opacity-100 lg:px-2 lg:max-w-[360px] xl:max-w-[376px] ${first ? '' : 'lg:ml-4 max-lg:animate-[fadein_0.4s_ease-out] motion-reduce:animate-none'}`
+            : 'max-lg:hidden lg:opacity-0 lg:max-w-0 lg:px-0 lg:ml-0 lg:pointer-events-none',
+    ].join(' ');
+    const PANEL_INNER = 'lg:w-[340px] xl:w-[360px]';
+
     // After Confirm, bring the result into view (it sits below the fold on phones).
-    // On wide screens the result sits beside the form, so no scrolling is needed.
+    // On wide screens the result appears beside the form, so no scrolling is needed.
     useEffect(() => {
         if (result && scrollToResult.current) {
             scrollToResult.current = false;
-            if (!window.matchMedia('(min-width: 1024px)').matches) {
+            if (!window.matchMedia('(min-width: 1280px)').matches) {
                 resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
@@ -172,7 +194,7 @@ export default function App() {
 
     return (
         <div className="bg-slate-50 text-slate-800 min-h-screen">
-            <div className="max-w-md lg:max-w-5xl xl:max-w-7xl mx-auto p-4 sm:p-6 lg:px-8 lg:py-4 pb-20 lg:pb-6">
+            <div className="max-w-md lg:max-w-5xl xl:max-w-[1400px] mx-auto p-4 sm:p-6 lg:px-8 lg:py-4 pb-20 lg:pb-6">
 
                 <div className="bg-blue-600 text-white p-4 lg:py-2.5 rounded-xl shadow-lg mb-6 lg:mb-3 flex items-center gap-3">
                     <div className="bg-white/20 p-2 rounded-lg">
@@ -203,11 +225,12 @@ export default function App() {
                     </div>
                 )}
 
-                {/* 1 column on phones, 2 on laptops (inputs | prepare + result), 3 on wide screens (inputs | prepare | result) */}
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-4 xl:grid-cols-3 lg:items-start">
+                {/* Panels appear in phases: inputs -> prepare & verify -> result. Row stays centered as it grows. */}
+                <div className="flex flex-col gap-6 lg:flex-row lg:flex-wrap lg:justify-center lg:gap-y-4 lg:items-start">
                     {/* form uses display:contents so Enter-to-confirm works while its cards are separate grid items */}
                     <form onSubmit={handleSubmit} noValidate className="contents">
-                    <div className="bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-4 lg:row-span-2 xl:row-span-1">
+                    <div className={panelClass(true, true)}>
+                    <div className={`${PANEL_INNER} bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-4`}>
                         <h2 className="font-semibold text-slate-700">Medication Details</h2>
 
                         <div>
@@ -270,9 +293,15 @@ export default function App() {
                             </div>
                         </div>
 
+
+                        {!reached2 && (
+                            <p className="text-sm text-slate-600">Enter {nextSteps.join(' and ')} to continue.</p>
+                        )}
+                    </div>
                     </div>
 
-                    <div className="bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-3">
+                    <div className={panelClass(reached2, false)} inert={!reached2}>
+                    <div className={`${PANEL_INNER} bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-3`}>
                         <h2 className="font-semibold text-slate-700">Prepare &amp; Verify</h2>
 
                         <div className="p-4 lg:p-3 bg-slate-50 rounded-lg border-2 border-slate-300 text-base text-slate-700">
@@ -356,9 +385,11 @@ export default function App() {
                             )}
                         </div>
                     </div>
+                    </div>
                     </form>
 
-                    <div className="space-y-4 lg:sticky lg:top-6">
+                    <div className={panelClass(reached3, false)} inert={!reached3}>
+                    <div className={`${PANEL_INNER} space-y-4`}>
                     {result ? (
                         <div ref={resultRef} aria-live="polite" className="space-y-4 scroll-mt-4">
                             <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden">
@@ -444,10 +475,11 @@ export default function App() {
                             <p>
                                 {wasReset
                                     ? 'An input changed, so the previous result was cleared. Tap Confirm again to recalculate.'
-                                    : 'Enter the dose, select the age group, and enter the observed volume, then tap Confirm to see the draw-up amount.'}
+                                    : 'Tap Confirm to see the draw-up amount.'}
                             </p>
                         </div>
                     )}
+                    </div>
                     </div>
                 </div>
 
