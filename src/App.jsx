@@ -172,9 +172,9 @@ export default function App() {
 
     return (
         <div className="bg-slate-50 text-slate-800 min-h-screen">
-            <div className="max-w-md lg:max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-20">
+            <div className="max-w-md lg:max-w-5xl xl:max-w-7xl mx-auto p-4 sm:p-6 lg:px-8 lg:py-4 pb-20 lg:pb-6">
 
-                <div className="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-6 flex items-center gap-3">
+                <div className="bg-blue-600 text-white p-4 lg:py-2.5 rounded-xl shadow-lg mb-6 lg:mb-3 flex items-center gap-3">
                     <div className="bg-white/20 p-2 rounded-lg">
                         <CalculatorIcon size={24} />
                     </div>
@@ -185,7 +185,7 @@ export default function App() {
                 </div>
 
                 {showBanner && (
-                    <div className="bg-sky-50 border-l-4 border-sky-500 p-3 rounded-r-xl shadow-sm mb-6">
+                    <div className="bg-sky-50 border-l-4 border-sky-500 p-3 lg:py-2 rounded-r-xl shadow-sm mb-6 lg:mb-3">
                         <div className="flex gap-3 items-start">
                             <InfoIcon size={20} className="text-sky-600 shrink-0 mt-0.5" />
                             <p className="text-sky-800 text-sm flex-1">
@@ -203,8 +203,11 @@ export default function App() {
                     </div>
                 )}
 
-                <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
-                    <form onSubmit={handleSubmit} noValidate className="bg-white p-5 lg:p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                {/* 1 column on phones, 2 on laptops (inputs | prepare + result), 3 on wide screens (inputs | prepare | result) */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-x-8 lg:gap-y-4 xl:grid-cols-3 lg:items-start">
+                    {/* form uses display:contents so Enter-to-confirm works while its cards are separate grid items */}
+                    <form onSubmit={handleSubmit} noValidate className="contents">
+                    <div className="bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-4 lg:row-span-2 xl:row-span-1">
                         <h2 className="font-semibold text-slate-700">Medication Details</h2>
 
                         <div>
@@ -267,9 +270,14 @@ export default function App() {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 rounded-lg border-2 border-slate-300 text-base text-slate-700">
-                            <h3 className="font-bold text-slate-800 text-lg mb-3">Reconstitution Instructions</h3>
-                            <ol className="space-y-3">
+                    </div>
+
+                    <div className="bg-white p-5 lg:p-4 rounded-xl shadow-sm border border-slate-200 space-y-5 lg:space-y-3">
+                        <h2 className="font-semibold text-slate-700">Prepare &amp; Verify</h2>
+
+                        <div className="p-4 lg:p-3 bg-slate-50 rounded-lg border-2 border-slate-300 text-base text-slate-700">
+                            <h3 className="font-bold text-slate-800 text-lg mb-3 lg:mb-2">Reconstitution Instructions</h3>
+                            <ol className="space-y-3 lg:space-y-2">
                                 {[
                                     <>Add <strong className="text-xl">{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine to the vial.</>,
                                     <>Shake well until the powder is fully dissolved.</>
@@ -281,21 +289,21 @@ export default function App() {
                                 ))}
                             </ol>
 
-                            <div className="mt-4 pt-3 border-t-2 border-dashed border-slate-300">
+                            <div className="mt-4 pt-3 lg:mt-3 lg:pt-2 border-t-2 border-dashed border-slate-300">
                                 <p className="text-sm font-semibold uppercase tracking-wide text-slate-600">Expected result</p>
                                 <p>Total volume in vial: <strong className="text-xl">{expectedVol} mL</strong></p>
                             </div>
 
-                            <div className="mt-3 p-3 bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-950 font-extrabold text-base leading-snug">
+                            <div className="mt-3 p-3 lg:mt-2 lg:p-2.5 bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-950 font-extrabold text-base leading-snug">
                                 <span aria-hidden="true">⚠️ </span><span className="sr-only">Warning: </span>This is the expected total NOT the draw volume
                             </div>
                         </div>
 
-                        <div className="p-4 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
+                        <div className="p-4 lg:p-3 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
                             <label htmlFor="observed-vol" className="block text-base font-bold text-slate-700 mb-1 flex items-center gap-2">
                                 <FlaskIcon size={18} /> Total Reconstituted Volume (mL)
                             </label>
-                            <p className="text-sm text-slate-600 mb-3 leading-snug">
+                            <p className="text-sm text-slate-600 mb-3 lg:mb-2 leading-snug">
                                 Enter the total fluid volume you observe in the vial. Expected: about {expectedVol} mL.
                             </p>
 
@@ -347,6 +355,7 @@ export default function App() {
                                 <p className="mt-3 text-sm text-slate-600">To continue, enter or select: {missing.join(', ')}.</p>
                             )}
                         </div>
+                    </div>
                     </form>
 
                     <div className="space-y-4 lg:sticky lg:top-6">
