@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // --- ICONS ---
 const CalculatorIcon = ({size=24, className=""}) => (
@@ -33,18 +33,43 @@ export default function App() {
     const [doseOrdered, setDoseOrdered] = useState('');
     const [vialSize, setVialSize] = useState('1000');
     const [ageGroup, setAgeGroup] = useState('child_older');
-    const [reconstitutedVol, setReconstitutedVol] = useState('2.9');
+    const [reconstitutedVol, setReconstitutedVol] = useState('');
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [showWork, setShowWork] = useState(false);
     const [result, setResult] = useState(null);
 
+    const resultRef = useRef(null);
+    const scrollToResult = useRef(false);
+
     const MAX_DOSE = 1000;
-    const isDoseOverLimit = parseFloat(doseOrdered) > MAX_DOSE;
 
     const VIAL_DATA = {
         '500': { mg: 500, diluent: 1.0, totalVolume: 1.4 },
         '1000': { mg: 1000, diluent: 2.1, totalVolume: 2.9 }
     };
+
+    // --- INPUT VALIDATION ---
+    const doseNum = parseFloat(doseOrdered);
+    const volNum = parseFloat(reconstitutedVol);
+    const expectedVol = VIAL_DATA[vialSize].totalVolume;
+
+    let doseError = null;
+    if (doseOrdered !== '') {
+        if (!(doseNum > 0)) doseError = 'Dose must be greater than 0 mg.';
+        else if (doseNum > MAX_DOSE) doseError = `Dose exceeds ${MAX_DOSE} mg maximum limit.`;
+        else if (doseNum > VIAL_DATA[vialSize].mg) doseError = `Dose exceeds the ${VIAL_DATA[vialSize].mg} mg in the selected vial. Check the vial size.`;
+    }
+
+    // Hard block for implausible readings (e.g. typo "29" for "2.9"); soft warning for small differences.
+    let volError = null;
+    let volWarning = null;
+    if (reconstitutedVol !== '') {
+        if (!(volNum > 0)) volError = 'Volume must be greater than 0 mL.';
+        else if (volNum < expectedVol * 0.5 || volNum > expectedVol * 1.5) volError = `${reconstitutedVol} mL is far from the expected ${expectedVol} mL. Re-check the vial and re-enter.`;
+        else if (Math.abs(volNum - expectedVol) > 0.3) volWarning = `Differs from the expected ${expectedVol} mL. Confirm this is what you see in the vial.`;
+    }
+
+    const canConfirm = doseNum > 0 && !doseError && volNum > 0 && !volError;
 
     const AGE_GUIDELINES = {
         'infant': { label: 'Infant (< 1 yr)', maxPerSite: 1.0 },
@@ -53,18 +78,26 @@ export default function App() {
     };
 
     useEffect(() => {
-        const standard = VIAL_DATA[vialSize].totalVolume.toString();
-        setReconstitutedVol(standard);
+        // Never pre-fill: the nurse must enter the volume actually observed in the vial.
+        setReconstitutedVol('');
         setIsConfirmed(false);
     }, [vialSize]);
 
     useEffect(() => {
-        if (isConfirmed && !isDoseOverLimit) {
+        if (isConfirmed && canConfirm) {
             calculate();
         } else {
             setResult(null);
         }
-    }, [doseOrdered, vialSize, ageGroup, reconstitutedVol, isConfirmed, isDoseOverLimit]);
+    }, [doseOrdered, vialSize, ageGroup, reconstitutedVol, isConfirmed, canConfirm]);
+
+    // After Confirm, bring the result into view (it sits below the fold on phones).
+    useEffect(() => {
+        if (result && scrollToResult.current) {
+            scrollToResult.current = false;
+            resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [result]);
 
     const handleDoseChange = (e) => {
         setDoseOrdered(e.target.value);
@@ -142,14 +175,14 @@ export default function App() {
                                     value={doseOrdered}
                                     onChange={handleDoseChange}
                                     placeholder="e.g. 500"
-                                    className={`w-full pl-3 pr-12 py-3 bg-slate-50 border rounded-lg focus:ring-2 outline-none transition-all text-lg font-medium ${isDoseOverLimit ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'}`}
+                                    className={`w-full pl-3 pr-12 py-3 bg-slate-50 border rounded-lg focus:ring-2 outline-none transition-all text-lg font-medium ${doseError ? 'border-red-500 focus:ring-red-500 bg-red-50' : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500'}`}
                                 />
                                 <span className="absolute right-4 top-3.5 text-slate-400 font-medium">mg</span>
                             </div>
-                            {isDoseOverLimit && (
-                                <div className="flex items-center gap-1 mt-2 text-red-600">
-                                    <AlertCircleIcon size={14} />
-                                    <p className="text-xs font-bold uppercase tracking-tight">Error: Dose exceeds 1000mg maximum limit.</p>
+                            {doseError && (
+                                <div className="flex items-center gap-1 mt-2 text-red-600" role="alert">
+                                    <AlertCircleIcon size={14} className="shrink-0" />
+                                    <p className="text-xs font-bold">Error: {doseError}</p>
                                 </div>
                             )}
                         </div>
@@ -198,7 +231,7 @@ export default function App() {
                                     <FlaskIcon size={16} /> Total Reconstituted Volume (mL)
                                 </label>
                                 <p className="text-[11px] text-slate-500 mb-3 leading-tight">
-                                    Enter the actual total fluid volume observed in the vial.
+                                    Enter the total fluid volume you observe in the vial. Expected: about {expectedVol} mL.
                                 </p>
 
                                 <div className="flex gap-2">
@@ -206,30 +239,44 @@ export default function App() {
                                         <input
                                             type="number"
                                             step="0.1"
+                                            placeholder="Enter volume"
                                             value={reconstitutedVol}
                                             onChange={(e) => {
                                                 setReconstitutedVol(e.target.value);
                                                 setIsConfirmed(false);
                                             }}
-                                            className={`w-full pl-3 pr-10 py-3 border rounded-lg focus:ring-2 outline-none font-bold transition-all ${isConfirmed ? 'bg-emerald-50 border-emerald-500 text-emerald-800' : 'bg-white border-blue-300 focus:ring-blue-500 text-blue-800'}`}
+                                            className={`w-full pl-3 pr-10 py-3 border rounded-lg focus:ring-2 outline-none font-bold transition-all ${isConfirmed ? 'bg-emerald-50 border-emerald-500 text-emerald-800' : volError ? 'bg-red-50 border-red-500 focus:ring-red-500 text-red-800' : 'bg-white border-blue-300 focus:ring-blue-500 text-blue-800'}`}
                                         />
                                         <span className="absolute right-3 top-3.5 text-slate-400 text-sm">mL</span>
                                     </div>
 
                                     <button
-                                        onClick={() => setIsConfirmed(true)}
-                                        disabled={!reconstitutedVol || isConfirmed || isDoseOverLimit}
+                                        onClick={() => { scrollToResult.current = true; setIsConfirmed(true); }}
+                                        disabled={!canConfirm || isConfirmed}
                                         className={`px-4 rounded-lg font-bold flex items-center gap-2 transition-all ${
                                             isConfirmed 
                                             ? 'bg-emerald-500 text-white shadow-sm' 
-                                            : isDoseOverLimit 
+                                            : !canConfirm 
                                                 ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                                                 : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md active:scale-95'
                                         }`}
                                     >
-                                        {isConfirmed ? <CheckIcon size={20} /> : 'Confirm'}
+                                        {isConfirmed ? <><CheckIcon size={20} /> Confirmed</> : 'Confirm'}
                                     </button>
                                 </div>
+
+                                {volError && (
+                                    <div className="flex items-start gap-1 mt-2 text-red-600" role="alert">
+                                        <AlertCircleIcon size={14} className="shrink-0 mt-0.5" />
+                                        <p className="text-xs font-bold">Error: {volError}</p>
+                                    </div>
+                                )}
+                                {volWarning && !volError && (
+                                    <div className="flex items-start gap-1 mt-2 text-amber-700" role="status">
+                                        <AlertCircleIcon size={14} className="shrink-0 mt-0.5" />
+                                        <p className="text-xs font-semibold">{volWarning}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -255,7 +302,7 @@ export default function App() {
                     </div>
 
                     {isConfirmed && result ? (
-                        <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+                        <div ref={resultRef} aria-live="polite" className="space-y-4 scroll-mt-4">
                             <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden">
                                 <div className="p-6 bg-blue-50/50">
                                     <div className="text-center">
@@ -334,7 +381,7 @@ export default function App() {
                         </div>
                     ) : (
                         <div className="text-center p-8 text-slate-400 bg-white rounded-xl border border-slate-200 border-dashed">
-                            <p>Verify the Reconstituted Volume above to display final draw-up amount.</p>
+                            <p>Enter the dose and the observed volume, then tap Confirm to see the draw-up amount.</p>
                         </div>
                     )}
                 </div>
