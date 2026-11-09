@@ -176,10 +176,18 @@ export default function App() {
                         <div className="space-y-3 pt-2">
                             <div className="p-4 bg-slate-50 rounded-lg border-2 border-slate-300 text-base text-slate-700">
                                 <h4 className="font-bold text-slate-800 text-lg mb-2">Reconstitution Instructions</h4>
-                                <ul className="list-disc list-inside space-y-2">
-                                    <li>Add <strong className="text-xl">{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine.</li>
-                                    <li className="font-semibold">Expected total volume: <strong className="text-xl">{VIAL_DATA[vialSize].totalVolume} mL</strong></li>
-                                </ul>
+                                <ol className="space-y-3">
+                                    {[
+                                        <>Add <strong className="text-xl">{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine to the vial.</>,
+                                        <>Shake well until the powder is fully dissolved.</>,
+                                        <>Expected total volume in vial: <strong className="text-xl">{VIAL_DATA[vialSize].totalVolume} mL</strong></>
+                                    ].map((step, i) => (
+                                        <li key={i} className="flex items-start gap-3">
+                                            <span className="shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center">{i + 1}</span>
+                                            <span className="pt-0.5">{step}</span>
+                                        </li>
+                                    ))}
+                                </ol>
                                 <div className="mt-3 p-3 bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-950 font-extrabold text-sm sm:text-base leading-snug">
                                     ⚠️ This is the expected total NOT the draw volume
                                 </div>
