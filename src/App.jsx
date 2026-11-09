@@ -356,7 +356,7 @@ export default function App() {
                                 <FlaskIcon size={18} /> Total Reconstituted Volume (mL)
                             </label>
                             <p className="text-sm text-slate-600 mb-3 lg:mb-2 leading-snug">
-                                Enter the total fluid volume you observe in the vial. Expected: about {expectedVol} mL.
+                                Enter the total volume drawn from the vial. Expected: about {expectedVol} mL.
                             </p>
 
                             <div className="flex gap-2">
