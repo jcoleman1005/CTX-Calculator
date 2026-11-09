@@ -79,13 +79,13 @@ export default function App() {
         else if (volNum < expectedVol * 0.5) volError = `${reconstitutedVol} mL is far below the expected ${expectedVol} mL. Ensure there is no more solution left in the vial, then re-enter.`;
         else if (volNum > expectedVol * 1.5) volError = `${reconstitutedVol} mL is far above the expected ${expectedVol} mL. Re-check the vial and re-enter.`;
         else if (expectedVol - volNum > 0.3) volWarning = `Under the expected ${expectedVol} mL. Ensure there is no more solution left in the vial before confirming.`;
-        else if (volNum - expectedVol > 0.3) volWarning = `Over the expected ${expectedVol} mL. Confirm this is what you see in the vial.`;
+        else if (volNum - expectedVol > 0.3) volWarning = `Over the expected ${expectedVol} mL. Confirm this is the volume you drew from the vial.`;
     }
 
     const missing = [];
     if (!(doseNum > 0)) missing.push('dose');
     if (!ageGroup) missing.push('age group');
-    if (!(volNum > 0)) missing.push('observed volume');
+    if (!(volNum > 0)) missing.push('volume drawn');
 
     const canConfirm = doseNum > 0 && !doseError && !!ageGroup && volNum > 0 && !volError;
 
@@ -108,7 +108,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isConfirmed, canConfirm, vialSize, volNum, doseNum, ageGroup]);
 
-    // Phase 2 (instructions + observed volume) appears once dose and age group are valid; phase 3 on first Confirm.
+    // Phase 2 (instructions + volume drawn) appears once dose and age group are valid; phase 3 on first Confirm.
     const inputsReady = doseNum > 0 && !doseError && !!ageGroup;
     if (inputsReady && !reached2) setReached2(true);
     if (result && !reached3) setReached3(true);
@@ -154,7 +154,7 @@ export default function App() {
     const handleVialChange = (size) => {
         if (size === vialSize) return;
         setVialSize(size);
-        // Never pre-fill: the nurse must enter the volume actually observed in the vial.
+        // Never pre-fill: the nurse must enter the volume actually drawn from the vial.
         setReconstitutedVol('');
         invalidate();
     };
@@ -424,7 +424,7 @@ export default function App() {
                                             <span className="text-2xl text-slate-500 font-medium">mL</span>
                                         </div>
                                         <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full uppercase tracking-tight">
-                                            Verified Yield: {result.currentYield} mL
+                                            Total from vial: {result.currentYield} mL
                                         </div>
                                     </div>
 
@@ -475,7 +475,7 @@ export default function App() {
                                         <div className="space-y-3 leading-relaxed">
                                             <div>
                                                 <p className="font-semibold text-slate-800">1. Calculate Concentration:</p>
-                                                <p className="pl-3">Vial Content ({vialSize} mg) ÷ Confirmed Yield ({result.currentYield} mL)</p>
+                                                <p className="pl-3">Vial Content ({vialSize} mg) ÷ Total Volume from Vial ({result.currentYield} mL)</p>
                                                 <p className="pl-3 text-blue-700 font-mono font-bold">= {result.concentration} mg/mL</p>
                                             </div>
                                             <div>
