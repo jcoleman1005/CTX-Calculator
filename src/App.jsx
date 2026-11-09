@@ -40,6 +40,7 @@ export default function App() {
     const [showBanner, setShowBanner] = useState(true);
 
     const resultRef = useRef(null);
+    const doseRef = useRef(null);
     const scrollToResult = useRef(false);
 
     const MAX_DOSE = 1000;
@@ -103,12 +104,22 @@ export default function App() {
     }, [isConfirmed, canConfirm, vialSize, volNum, doseNum, ageGroup]);
 
     // After Confirm, bring the result into view (it sits below the fold on phones).
+    // On wide screens the result sits beside the form, so no scrolling is needed.
     useEffect(() => {
         if (result && scrollToResult.current) {
             scrollToResult.current = false;
-            resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (!window.matchMedia('(min-width: 1024px)').matches) {
+                resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     }, [result]);
+
+    // Mouse + keyboard users start typing immediately; touch devices are left alone (no surprise keyboard).
+    useEffect(() => {
+        if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            doseRef.current?.focus();
+        }
+    }, []);
 
     // Any change to a confirmed input un-confirms it and tells the user why the result went away.
     const invalidate = () => {
@@ -140,6 +151,17 @@ export default function App() {
         setIsConfirmed(true);
     };
 
+    // Enter key in any field confirms once everything is valid.
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (canConfirm && !isConfirmed) handleConfirm();
+    };
+
+    // Stop the mouse wheel from silently changing a focused number field.
+    const blurOnWheel = (e) => e.currentTarget.blur();
+
+    const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2';
+
     // Full class names (not interpolated) so Tailwind can detect them.
     const SELECTED = {
         blue: 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm',
@@ -150,7 +172,7 @@ export default function App() {
 
     return (
         <div className="bg-slate-50 text-slate-800 min-h-screen">
-            <div className="max-w-md mx-auto p-4 sm:p-6 pb-20">
+            <div className="max-w-md lg:max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-20">
 
                 <div className="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-6 flex items-center gap-3">
                     <div className="bg-white/20 p-2 rounded-lg">
@@ -170,6 +192,7 @@ export default function App() {
                                 <strong>Refresh your browser</strong> for the latest updates. Bookmark: <a href="https://ctxcalc.jcoleman.us" className="font-bold underline hover:text-sky-900">ctxcalc.jcoleman.us</a>
                             </p>
                             <button
+                                type="button"
                                 onClick={() => setShowBanner(false)}
                                 aria-label="Dismiss update notice"
                                 className="shrink-0 w-8 h-8 -mt-1 -mr-1 rounded-lg text-sky-700 text-xl leading-none hover:bg-sky-100"
@@ -180,8 +203,8 @@ export default function App() {
                     </div>
                 )}
 
-                <div className="space-y-6">
-                    <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-5">
+                <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
+                    <form onSubmit={handleSubmit} noValidate className="bg-white p-5 lg:p-6 rounded-xl shadow-sm border border-slate-200 space-y-5">
                         <h2 className="font-semibold text-slate-700">Medication Details</h2>
 
                         <div>
@@ -189,6 +212,8 @@ export default function App() {
                             <div className="relative">
                                 <input
                                     id="dose"
+                                    ref={doseRef}
+                                    onWheel={blurOnWheel}
                                     type="number"
                                     inputMode="decimal"
                                     value={doseOrdered}
@@ -212,10 +237,11 @@ export default function App() {
                             <div className="grid grid-cols-2 gap-3">
                                 {Object.keys(VIAL_DATA).map((size) => (
                                     <button
+                                        type="button"
                                         key={size}
                                         onClick={() => handleVialChange(size)}
                                         aria-pressed={vialSize === size}
-                                        className={`p-3 rounded-lg border text-base font-medium transition-all ${choiceBtn(vialSize === size, 'blue')}`}
+                                        className={`p-3 rounded-lg border text-base font-medium transition-all cursor-pointer ${FOCUS} ${choiceBtn(vialSize === size, 'blue')}`}
                                     >
                                         {size} mg
                                     </button>
@@ -228,10 +254,11 @@ export default function App() {
                             <div className="grid grid-cols-3 gap-2">
                                 {Object.entries(AGE_GUIDELINES).map(([key, data]) => (
                                     <button
+                                        type="button"
                                         key={key}
                                         onClick={() => setAgeGroup(key)}
                                         aria-pressed={ageGroup === key}
-                                        className={`p-2 rounded-lg border text-sm font-medium transition-all flex flex-col items-center justify-center text-center h-20 ${choiceBtn(ageGroup === key, 'emerald')}`}
+                                        className={`p-2 rounded-lg border text-sm font-medium transition-all flex flex-col items-center justify-center text-center h-20 cursor-pointer ${FOCUS} ${choiceBtn(ageGroup === key, 'emerald')}`}
                                     >
                                         {key === 'infant' ? <BabyIcon size={18} className="mb-1"/> : <UserIcon size={18} className="mb-1"/>}
                                         {data.label}
@@ -276,6 +303,7 @@ export default function App() {
                                 <div className="relative flex-1">
                                     <input
                                         id="observed-vol"
+                                        onWheel={blurOnWheel}
                                         type="number"
                                         inputMode="decimal"
                                         step="0.1"
@@ -289,9 +317,9 @@ export default function App() {
                                 </div>
 
                                 <button
-                                    onClick={handleConfirm}
+                                    type="submit"
                                     disabled={!canConfirm || isConfirmed}
-                                    className={`px-4 rounded-lg font-bold flex items-center gap-2 transition-all ${
+                                    className={`px-4 rounded-lg font-bold flex items-center gap-2 transition-all ${FOCUS} ${
                                         isConfirmed
                                         ? 'bg-emerald-600 text-white shadow-sm'
                                         : !canConfirm
@@ -319,8 +347,9 @@ export default function App() {
                                 <p className="mt-3 text-sm text-slate-600">To continue, enter or select: {missing.join(', ')}.</p>
                             )}
                         </div>
-                    </div>
+                    </form>
 
+                    <div className="space-y-4 lg:sticky lg:top-6">
                     {result ? (
                         <div ref={resultRef} aria-live="polite" className="space-y-4 scroll-mt-4">
                             <div className="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 overflow-hidden">
@@ -366,9 +395,10 @@ export default function App() {
 
                             <div className="flex flex-col gap-2">
                                 <button
+                                    type="button"
                                     onClick={() => setShowWork(!showWork)}
                                     aria-expanded={showWork}
-                                    className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg bg-slate-200 text-slate-700 text-sm font-bold uppercase tracking-wider hover:bg-slate-300 transition-colors"
+                                    className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg bg-slate-200 text-slate-700 text-sm font-bold uppercase tracking-wider hover:bg-slate-300 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                                 >
                                     <EyeIcon size={16} />
                                     {showWork ? 'Hide Calculations' : 'Show Calculations'}
@@ -409,6 +439,7 @@ export default function App() {
                             </p>
                         </div>
                     )}
+                    </div>
                 </div>
 
                 <div className="mt-8 text-center px-4">
