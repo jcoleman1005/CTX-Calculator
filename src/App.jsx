@@ -76,8 +76,10 @@ export default function App() {
     let volWarning = null;
     if (reconstitutedVol !== '') {
         if (!(volNum > 0)) volError = 'Volume must be greater than 0 mL.';
-        else if (volNum < expectedVol * 0.5 || volNum > expectedVol * 1.5) volError = `${reconstitutedVol} mL is far from the expected ${expectedVol} mL. Re-check the vial and re-enter.`;
-        else if (Math.abs(volNum - expectedVol) > 0.3) volWarning = `Differs from the expected ${expectedVol} mL. Confirm this is what you see in the vial.`;
+        else if (volNum < expectedVol * 0.5) volError = `${reconstitutedVol} mL is far below the expected ${expectedVol} mL. Ensure there is no more solution left in the vial, then re-enter.`;
+        else if (volNum > expectedVol * 1.5) volError = `${reconstitutedVol} mL is far above the expected ${expectedVol} mL. Re-check the vial and re-enter.`;
+        else if (expectedVol - volNum > 0.3) volWarning = `Under the expected ${expectedVol} mL. Ensure there is no more solution left in the vial before confirming.`;
+        else if (volNum - expectedVol > 0.3) volWarning = `Over the expected ${expectedVol} mL. Confirm this is what you see in the vial.`;
     }
 
     const missing = [];
