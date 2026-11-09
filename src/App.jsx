@@ -340,12 +340,11 @@ export default function App() {
                                 ))}
                             </ol>
 
-                            <div className="mt-4 pt-3 lg:mt-3 lg:pt-2 border-t-2 border-dashed border-slate-300">
-                                <p className="text-sm font-semibold uppercase tracking-wide text-slate-600">Expected result</p>
-                                <p>Total volume in vial: <strong className="text-xl">{expectedVol} mL</strong></p>
+                            <div className="mt-3 pt-2 border-t-2 border-dashed border-slate-300 text-sm">
+                                <p className="text-slate-600">Expected total volume in vial: <strong className="text-base text-slate-800">{expectedVol} mL</strong></p>
                             </div>
 
-                            <div className="mt-3 p-3 lg:mt-2 lg:p-2.5 bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-950 font-extrabold text-base leading-snug">
+                            <div className="mt-2 px-2.5 py-1.5 bg-amber-100 border border-amber-400 rounded-lg text-amber-950 font-bold text-sm leading-snug">
                                 <span aria-hidden="true">⚠️ </span><span className="sr-only">Warning: </span>This is the expected total NOT the draw volume
                             </div>
                         </div>
