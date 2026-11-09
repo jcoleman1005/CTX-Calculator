@@ -174,12 +174,15 @@ export default function App() {
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600">
-                                <h4 className="font-bold text-slate-700 mb-1">Reconstitution Instructions</h4>
-                                <ul className="list-disc list-inside space-y-1">
-                                    <li>Add <strong>{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine.</li>
-                                    <li className="text-slate-400 italic">Expected standard yield: {VIAL_DATA[vialSize].totalVolume} mL.</li>
+                            <div className="p-4 bg-slate-50 rounded-lg border-2 border-slate-300 text-base text-slate-700">
+                                <h4 className="font-bold text-slate-800 text-lg mb-2">Reconstitution Instructions</h4>
+                                <ul className="list-disc list-inside space-y-2">
+                                    <li>Add <strong className="text-xl">{VIAL_DATA[vialSize].diluent} mL</strong> of 1% Lidocaine.</li>
+                                    <li className="font-semibold">Expected total volume: <strong className="text-xl">{VIAL_DATA[vialSize].totalVolume} mL</strong></li>
                                 </ul>
+                                <div className="mt-3 p-3 bg-amber-100 border-2 border-amber-400 rounded-lg text-amber-950 font-extrabold text-sm sm:text-base leading-snug">
+                                    ⚠️ This is the expected total NOT the draw volume
+                                </div>
                             </div>
 
                             <div className="p-4 bg-white border-2 border-slate-200 rounded-xl shadow-sm">
