@@ -262,7 +262,7 @@ export default function App() {
                         </div>
 
                         <div role="group" aria-labelledby="vial-label">
-                            <div id="vial-label" className="block text-sm font-medium text-slate-700 mb-2">Vial Size Used</div>
+                            <div id="vial-label" className="block text-sm font-medium text-slate-700 mb-2">Ceftriaxone Vial Size Used</div>
                             <div className="grid grid-cols-2 gap-3">
                                 {Object.keys(VIAL_DATA).map((size) => {
                                     const blocked = doseNum > VIAL_DATA[size].mg;
